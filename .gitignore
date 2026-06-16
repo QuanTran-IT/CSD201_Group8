@@ -1,0 +1,14 @@
+# Bỏ qua các thư mục build và cấu hình của IDE
+.idea/
+.vscode/
+out/
+bin/
+target/
+*.iml
+
+# Bỏ qua các file thực thi đã biên dịch
+*.class
+*.jar
+
+# Bỏ qua file log hoặc file dữ liệu tạm (nếu cần)
+*.log
