@@ -1,23 +1,33 @@
-E-commerce Product Catalog Filter
-📌 Project Overview
-  This project is an algorithmic and data structure-focused system designed to efficiently manage, search, filter, and sort products for e-commerce platforms handling over 50,000 products. Developed for the Data Structures and Algorithms (CSD201) course, the system prioritizes high-performance retrieval and system scalability through optimal data organization patterns.  
-⚙️ Core Modules & Data Architecture
-The system is divided into four main functional modules, each utilizing specific data structures to maximize performance:
-- 🔍 Search Engine (Hybrid Search):
-    + Combines constant-time O(1) exact lookups using HashMap<String, Product> for product IDs with an ArrayList<Product> for flexible, linear sequential scanning of keywords.
-- 🎯 Product Filtering System (Tree Traversal):
-    + Allows users to narrow down products by category, price range, brand, and rating.
-    + It leverages TreeMap structures to achieve logarithmic-time O(log n) efficiency for range-based queries, such as price ranges.
-- ⚡ Product Sorting System (Divide and Conquer):
-    + Sorts products dynamically by price, popularity, and user rating.
-    + Implements an Iterative QuickSort algorithm directly on an ArrayList to perform fast index-based swapping, achieving an average time complexity of O(n log n).
-- 🕒 Recently Viewed Products (Chronological Tracking):
-    + Maintains the user's browsing history by utilizing a Doubly LinkedList paired with a HashMap.
-    + This hybrid memory management ensures that node retrieval, chronological insertions, and sequence updates are executed in constant O(1) time.
-🔬 Research Focus
-- A core component of this project is the investigation of data structure efficiency under heavy loads. The primary research question evaluates the performance impact of using tree-structured data (TreeMap) versus linear data traversal (ArrayList) when executing price range filtering operations on a catalog with more than 50,000 products.
-👨‍💻 Contributors
-  - Đào Thị Ngọc Trâm (SE201480)
-  - Trần Lê Anh Quân (SE200441)
-  - Nguyễn Việt Tân (SE201036)
-  - Trần Lê Khánh Toàn (SE201448) 
+# E-commerce Product Catalog Filter
+
+## 📌 Project Overview
+The **E-commerce Product Catalog Filter System** is an algorithmic and data structure-focused project developed for the Data Structures and Algorithms (CSD201) course. Modern e-commerce platforms contain thousands of products, making it difficult for users to find items quickly. This system is designed to efficiently manage, search, filter, and sort product data, maintaining high performance and scalability even when handling large datasets of over 50,000 products.
+
+## ⚙️ Core Modules & System Architecture
+The system is decomposed into four main functional modules. Based on our Conceptual Framework, each module is powered by specific data structures to optimize time and space complexity:
+
+### 🔍 1. Search Engine (Tree-Based Search)
+* **Responsibility:** Processes keyword-based product searching and exact ID lookups.
+* **Data Structure:** Utilizes a **Binary Search Tree (BST)** (`BinarySearchTree<Product>`).
+* **Performance:** Achieves **O(log n)** time complexity for search, insertion, and traversal operations, efficiently replacing O(n) linear scans.
+
+### 🎯 2. Product Filtering System (Linear Scan with Early-Exit)
+* **Responsibility:** Allows users to narrow down products dynamically by category, price bounds, brand, and rating.
+* **Data Structure & Algorithm:** Utilizes an `ArrayList<Product>` for sequential filtering. 
+* **Performance:** Implements an early-exit pagination strategy, reducing the worst-case O(n) complexity to an efficient **O(M)** (where M is the number of checked items until the page is full).
+
+### ⚡ 3. Product Sorting System (Divide and Conquer)
+* **Responsibility:** Sorts the product catalog dynamically based on Price, Popularity (views), and user Rating.
+* **Data Structure & Algorithm:** Implements an **Iterative Quick Sort** algorithm directly on an `ArrayList<Product>`. It utilizes a custom `Stack<Integer>` to track sub-array boundaries, entirely eliminating recursion overhead.
+* **Performance:** Achieves an optimal average time complexity of **O(n log n)** leveraging fast O(1) index-based swapping.
+
+### 🕒 4. Recently Viewed Products (Chronological Tracking)
+* **Responsibility:** Maintains the user's browsing history for quick access and seamless shopping convenience.
+* **Data Structure:** Employs a hybrid approach combining a **Doubly LinkedList** and a **HashMap** (`HashMap<String, Node>`).
+* **Performance:** This combination ensures that duplicate prevention, node retrieval, chronological insertions, and sequence updates are executed in strictly **O(1)** constant time.
+
+## 🔬 Research Focus & Performance Experiment
+A core academic component of this project is empirical performance testing. 
+
+* **Research Question:** *How does the choice between `TreeMap` and `ArrayList` affect the efficiency of price range filtering operations in an e-commerce product catalog with more than 50,000 products?*
+* **Hypothesis:** While sequential filtering with an `ArrayList` is sufficient for small lists, transitioning to a tree-structured data organization (`TreeMap`) is expected to demonstrate significantly faster logarithmic-time filtering. This experiment evaluates the scalability limitations of linear data traversal versus the enhanced responsiveness of tree-based filtering in real-world scenarios.
