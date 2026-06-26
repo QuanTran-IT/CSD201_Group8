@@ -23,6 +23,8 @@ public class Controller {
     private final ProductSorter productSorter;
     private final ConsoleView consoleView;
     private final boolean isSaved;
+    //data for all system
+    private java.util.List<model.Product> systemProductList;
 
     public Controller() {
         // Khởi tạo các engine và sorter
@@ -31,7 +33,10 @@ public class Controller {
         historyManager = new ViewedProductsHistory();
         productSorter = new ProductSorter();
         consoleView = new ConsoleView();
-
+        systemProductList = utils.FileUtils.loadProducts();
+        if (systemProductList == null) {
+            systemProductList = new java.util.ArrayList<>();
+        }
         // Tải dữ liệu sản phẩm ban đầu vào hệ thống
         loadInitialData();
         isSaved = true;
@@ -44,7 +49,7 @@ public class Controller {
 
             switch (choice) {
                 case 1:
-                    filterAndPaginate();        // 1. Filter Products
+                    filterProduct();        // 1. Filter Products
                     break;
                 case 2:
                     searchProducts();           // 2. Search Products (SearchEngine)
@@ -56,6 +61,9 @@ public class Controller {
                     manageViewedHistory();      // 4. Manage Viewed History
                     break;
                 case 5:
+                    saveFile();      // 4. Manage Viewed History
+                    break;
+                case 6:
                     exitProgram();              // 5. Quit program
                     return;
                 default:
@@ -91,9 +99,76 @@ public class Controller {
         System.out.println("--- Manage Product Information ---");
     }
 
-    private void filterAndPaginate() {
-        System.out.println("--- Filter & Paginate Products ---");
+   private void filterProduct() {
+    // Sync FilterEngine với data mới nhất (đề phòng có thêm/xóa sản phẩm)
+    filterEngine.setProductList(systemProductList);
+    consoleView.displayFilterMenu();
+
+    // ── Thu thập tiêu chí lọc ──────────────────────────────────────────────
+    String category = utils.Inputter.getStringRegex(
+        "  Category (Laptop/Smartphone/Headphones, Enter=All): ",
+        "  Letters only!", "[A-Za-z]+");
+    if (category.isEmpty()) category = null;
+
+    double minPrice = utils.Inputter.getDoubleAllowEmpty(
+        "  Min price $ (Enter=0): ", 0);
+    double maxPrice = utils.Inputter.getDoubleAllowEmpty(
+        "  Max price $ (Enter=no limit): ", Double.MAX_VALUE);
+
+    String brand = utils.Inputter.getStringRegex(
+        "  Brand (Apple/Samsung/Dell/Sony, Enter=All): ",
+        "  Letters only!", "[A-Za-z]+");
+    if (brand.isEmpty()) brand = null;
+
+    double minRating = utils.Inputter.getDoubleAllowEmpty(
+        "  Min rating 0-5 (Enter=0): ", 0);
+
+    // ── Vòng lặp phân trang ────────────────────────────────────────────────
+    final int PAGE_SIZE = 3;
+    int pageNumber = 1;
+
+    while (true) {
+        java.util.List<model.Product> results = filterEngine.productFilter(
+            category, minPrice, maxPrice, brand, minRating, pageNumber, PAGE_SIZE);
+
+        consoleView.displayProductList(results, pageNumber, PAGE_SIZE);
+
+        // Hết kết quả
+        if (results.isEmpty()) {
+            if (pageNumber == 1) System.out.println("  No products match your criteria.");
+            else { System.out.println("  No more products."); pageNumber--; }
+            break;
+        }
+
+        boolean isLastPage = (results.size() < PAGE_SIZE);
+
+        // Hiển thị nav phù hợp với trang hiện tại
+        System.out.print("  Options: ");
+        if (!isLastPage)  System.out.print("[N]ext  ");
+        if (pageNumber > 1) System.out.print("[P]rev  ");
+        System.out.println("[Q]uit");
+
+        String nav = utils.Inputter.getString("  Choice: ").toUpperCase();
+
+        switch (nav) {
+            case "N":
+                if (isLastPage) System.out.println("  Already on last page.");
+                else pageNumber++;
+                break;
+            case "P":
+                if (pageNumber > 1) pageNumber--;
+                else System.out.println("  Already on first page.");
+                break;
+            case "Q":
+                System.out.println("  Returning to main menu...");
+                return;
+            default:
+                System.out.println("  Invalid choice.");
+        }
     }
+
+    utils.Inputter.getString("\n  Press Enter to continue...");
+}
 
     private void searchProducts() {
         while (true) {
@@ -172,7 +247,11 @@ public class Controller {
         System.out.println("--- Viewed Products History ---");
     }
 
+    private void saveFile() {
+
+    }
+
     private void exitProgram() {
-        System.out.println("Exiting E-Commerce Product Management... Goodbye!");
+        
     }
 }
