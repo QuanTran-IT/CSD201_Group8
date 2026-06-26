@@ -10,6 +10,7 @@ package service;
  */
 
 import java.util.HashMap;
+import model.Product;
 
 public class ViewedProductsHistory {
     private Node head;
