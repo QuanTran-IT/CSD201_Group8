@@ -11,13 +11,14 @@ import java.util.Scanner;
  * @author ADMIN
  */
 public class Inputter {
+
     private static Scanner sc = new Scanner(System.in);
-    
+
     public static String getString(String message) {
         System.out.print(message);
-        return sc.next().trim();
+        return sc.nextLine().trim();
     }
-    
+
     public static String inputAndLoop(String message, String error, String pattern) {
         while (true) {
             String input = getString(message);
@@ -31,7 +32,7 @@ public class Inputter {
             }
         }
     }
-    
+
     public static int getInt(String message, String error, String pattern) {
         String numberInString = inputAndLoop(message, error, pattern);
         if (numberInString != null) {
@@ -39,14 +40,14 @@ public class Inputter {
         } else {
             return -1;
         }
-        
+
     }
-    
+
     public static String getStringRegex(String messageInfo,
             String error, String pattern) {
         do {
             String input = getString(messageInfo);
-            
+
             if (input.trim().isEmpty()) {
                 return input.trim();
             }
@@ -57,7 +58,7 @@ public class Inputter {
             System.out.println(error);
         } while (true);
     }
-    
+
     public static int getChoice(String message, String errorOutOfRange, String errorOfNumber, int min, int max) {
         do {
             try {
@@ -69,31 +70,49 @@ public class Inputter {
                 }
             } catch (NumberFormatException e) {
                 System.out.println(errorOfNumber);
-               
+
             }
         } while (true);
     }
-    
+
     public static int getIntAllowEmpty(String messageInfo, String error, int min) {
         do {
-            String input = getString(messageInfo).trim();            
+            String input = getString(messageInfo).trim();
             if (input.isEmpty()) {
-                return -1;                
-            }            
+                return -1;
+            }
             try {
                 int value = Integer.parseInt(input);
                 if (value >= min) {
                     return value;
                 } else {
-                    System.out.println(error);                    
+                    System.out.println(error);
                 }
             } catch (NumberFormatException e) {
                 System.out.println("Invalid input! Please enter a valid number.");
-               
+
             }
         } while (true);
     }
-    
+
+    public static double getDoubleAllowEmpty(String message, double defaultValue) {
+        while (true) {
+            String input = getString(message);
+            if (input.isEmpty()) {
+                return defaultValue;
+            }
+            try {
+                double value = Double.parseDouble(input);
+                if (value >= 0) {
+                    return value;
+                }
+                System.out.println("Please enter a non-negative number.");
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid! Enter a number or press Enter to skip.");
+            }
+        }
+    }
+
     public static boolean confirmYesNo(String message) {
         String confirm = Inputter.getString(message);
         while (true) {
