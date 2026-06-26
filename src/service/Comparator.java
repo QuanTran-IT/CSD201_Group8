@@ -4,10 +4,12 @@
  */
 package service;
 
+import java.util.ArrayList;
+
 /**
  *
  * @author ADMIN
  */
-public interface Comparator<Product> {
-    
+public interface Comparator<T> {
+    int compare(T p1, T p2);
 }
