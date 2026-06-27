@@ -21,6 +21,10 @@ public class ViewedProductsHistory {
         this.productMap = new HashMap<>();
     }
 
+    public Iterator iterator() {
+        return new Iterator(this.head);
+    }
+
     /**
      * Method to check if history is empty
      */
@@ -113,6 +117,34 @@ public class ViewedProductsHistory {
             this.product = product;
             this.prev = prev;
             this.next = next;
+        }
+    }
+
+    private class Iterator implements ProductsIterator {
+        private Node current;
+
+        Iterator(Node head) {
+            this.current = head;
+        }
+
+        @Override
+        public boolean hasNext() {
+            boolean result = false;
+
+            if (this.current != null) {
+                result = true;
+            }
+
+            return result;
+        }
+
+        @Override
+        public Product next() {
+            Product result = this.current.product;
+
+            this.current = this.current.next;
+
+            return result;
         }
     }
 }
