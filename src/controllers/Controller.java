@@ -30,19 +30,23 @@ public class Controller {
     private java.util.List<model.Product> systemProductList;
 
     public Controller() {
-        // Khởi tạo các engine và sorter
-        filterEngine = new FilterEngine();
-        searchEngine = new SearchEngine();
-        historyManager = new ViewedProductsHistory();
-        productSorter = new ProductSorter();
-        consoleView = new ConsoleView();
-        systemProductList = utils.FileUtils.loadProducts();
-        if (systemProductList == null) {
-            systemProductList = new java.util.ArrayList<>();
-        }
-        // Tải dữ liệu sản phẩm ban đầu vào hệ thống
-        loadInitialData();
-        isSaved = true;
+    filterEngine = new FilterEngine();
+    searchEngine = new SearchEngine();
+    historyManager = new ViewedProductsHistory();
+    productSorter = new ProductSorter();
+    consoleView = new ConsoleView();
+
+    systemProductList = utils.FileUtils.loadProducts();
+    if (systemProductList == null) {
+        systemProductList = new java.util.ArrayList<>();
+        System.out.println("[System] No data file found. Starting with empty list.");
+    }
+
+    // Cả 2 engine nhận chung systemProductList
+    searchEngine.setProductList(systemProductList);
+    filterEngine.setProductList(systemProductList);
+    
+    isSaved = true;
     }
 
     public void startProgram() {
@@ -78,69 +82,48 @@ public class Controller {
     // =================================================================
     // CÁC HÀM XỬ LÝ LOGIC CHI TIẾT
     // =================================================================
-    private void loadInitialData() {
-        // 1. Khởi tạo danh sách các sản phẩm mẫu (Khớp với Constructor của Product.java)
-        Product p1 = new Product("P003", "iPhone 14 Pro Max", "Smartphone", 1099.00, "Apple", 4.8, 1500);
-        Product p2 = new Product("P001", "MacBook Air M2", "Laptop", 1199.00, "Apple", 4.9, 2500);
-        Product p3 = new Product("P005", "Dell XPS 13 OLED", "Laptop", 1399.00, "Dell", 4.6, 1200);
-        Product p4 = new Product("P002", "Samsung Galaxy S23 Ultra", "Smartphone", 999.00, "Samsung", 4.7, 1800);
-        Product p5 = new Product("P004", "Sony WH-1000XM5", "Headphones", 399.00, "Sony", 4.5, 900);
 
-        // 2. Thêm dữ liệu vào cây BST của SearchEngine
-        // Mẹo nhỏ: Đưa phần tử trung vị "P003" vào trước để làm gốc (Root), 
-        // sau đó thêm các phần tử khác sẽ giúp cây nhị phân BST cân bằng tốt hơn, tối ưu tốc độ tìm kiếm.
-        searchEngine.insert(p1);
-        searchEngine.insert(p2);
-        searchEngine.insert(p3);
-        searchEngine.insert(p4);
-        searchEngine.insert(p5);
 
-        System.out.println("[Hệ thống] Đã tự động nạp " + 5 + " sản phẩm mẫu vào SearchEngine!");
-    }
 
-    private void manageProductInformation() {
-        System.out.println("--- Manage Product Information ---");
-    }
+    private void filterProduct() {
+//        filterEngine.setProductList(systemProductList);
 
-private void filterProduct() {
-    filterEngine.setProductList(systemProductList);
- 
-   consoleView.displayFilterMenu();
- 
-    int choice = utils.Inputter.getChoice(
-        "  Choice: ", "  Out of range!", "  Invalid!", 1, 4);
- 
-    java.util.List<model.Product> result = new java.util.ArrayList<>();
- 
-    switch (choice) {
-        case 1:
-            double min = utils.Inputter.getDoubleAllowEmpty("  Min price $ (Enter=0): ", 0);
-            double max = utils.Inputter.getDoubleAllowEmpty("  Max price $ (Enter=no limit): ", Double.MAX_VALUE);
-            result = filterEngine.filterByDouble("price", min, max);
-            break;
-        case 2:
-            double minRating = utils.Inputter.getDoubleAllowEmpty("  Min rating 0.0-5.0 (Enter=0): ", 0);
-            result = filterEngine.filterByDouble("rating", minRating, 5.0);
-            break;
-        case 3:
-            String category = utils.Inputter.getString("  Category: ");
-            result = filterEngine.filterByString("category", category);
-            break;
-        case 4:
-            String brand = utils.Inputter.getString("  Brand: ");
-            result = filterEngine.filterByString("brand", brand);
-            break;
+        consoleView.displayFilterMenu();
+
+        int choice = utils.Inputter.getChoice(
+                "  Choice: ", "  Out of range!", "  Invalid!", 1, 4);
+
+        java.util.List<model.Product> result = new java.util.ArrayList<>();
+
+        switch (choice) {
+            case 1:
+                double min = utils.Inputter.getDoubleAllowEmpty("  Min price $ (Enter=0): ", 0);
+                double max = utils.Inputter.getDoubleAllowEmpty("  Max price $ (Enter=no limit): ", Double.MAX_VALUE);
+                result = filterEngine.filterByDouble("price", min, max);
+                break;
+            case 2:
+                double minRating = utils.Inputter.getDoubleAllowEmpty("  Min rating 0.0-5.0 (Enter=0): ", 0);
+                result = filterEngine.filterByDouble("rating", minRating, 5.0);
+                break;
+            case 3:
+                String category = utils.Inputter.getString("  Category: ");
+                result = filterEngine.filterByString("category", category);
+                break;
+            case 4:
+                String brand = utils.Inputter.getString("  Brand: ");
+                result = filterEngine.filterByString("brand", brand);
+                break;
+        }
+
+        if (result.isEmpty()) {
+            System.out.println("\n  No products found.");
+        } else {
+            consoleView.displayProductList(result, 1, result.size());
+            System.out.printf("  %d result(s) found.%n", result.size());
+        }
+
+        utils.Inputter.getString("\n  Press Enter to continue...");
     }
- 
-    if (result.isEmpty()) {
-        System.out.println("\n  No products found.");
-    } else {
-        consoleView.displayProductList(result, 1, result.size());
-        System.out.printf("  %d result(s) found.%n", result.size());
-    }
- 
-    utils.Inputter.getString("\n  Press Enter to continue...");
-}
 
     private void searchProducts() {
         while (true) {
@@ -170,6 +153,7 @@ private void filterProduct() {
                     if (foundProduct != null) {
                         System.out.println("\n[FOUND] Product details:");
                         System.out.println(foundProduct.toString());
+                        historyManager.addViewedProduct(foundProduct); 
                     } else {
                         System.out.println("No product found with ID: " + id);
                     }
@@ -188,6 +172,7 @@ private void filterProduct() {
                         System.out.println("\n[FOUND] " + results.size() + " product(s):");
                         for (model.Product p : results) {
                             System.out.println(p.toString());
+                            historyManager.addViewedProduct(p);
                         }
                     }
                     break;
@@ -213,17 +198,16 @@ private void filterProduct() {
         // 3. Gọi productSorter để xử lý:
         // productSorter.sortProducts(currentList, criteria);
         // 4. In danh sách đã sắp xếp ra màn hình
-        
         System.out.println("1. Sort by PRICE (Ascending: Lowest to Highest)");
         System.out.println("2. Sort by RATING (Descending: 5 Stars to 1 Star)");
         System.out.println("3. Sort by POPULARITY (Descending: Most Viewed to Least Viewed)");
         System.out.print("Enter your choice: ");
-        
-        int sortChoice = consoleView.getChoiceInput(); 
-        
+
+        int sortChoice = consoleView.getChoiceInput();
+
         // 1. Lấy danh sách sản phẩm hiện tại từ FilterEngine
         ArrayList<Product> currentList = (ArrayList<Product>) filterEngine.getProductList();
-        
+
         if (currentList == null || currentList.isEmpty()) {
             System.out.println("Danh sách sản phẩm đang trống, không thể sắp xếp.");
             return;
@@ -232,72 +216,92 @@ private void filterProduct() {
         // 2. Controller điều phối: Truyền Comparator tự tạo vào cho ProductSorter
         switch (sortChoice) {
             case 1:
-                productSorter.sortProducts(currentList, new service.Comparator<Product>() {
-                    @Override
-                    public int compare(Product p1, Product p2) {
-                        return Double.compare(p1.getPrice(), p2.getPrice());
-                    }
-                });
+                productSorter.sortProducts(currentList, (Product p1, Product p2) -> Double.compare(p1.getPrice(), p2.getPrice()));
                 System.out.println("Đã sắp xếp danh sách theo Giá tăng dần!");
                 break;
-                
+
             case 2:
-                productSorter.sortProducts(currentList, new service.Comparator<Product>() {
-                    @Override
-                    public int compare(Product p1, Product p2) {
-                        return Double.compare(p2.getRating(), p1.getRating()); 
-                    }
-                });
+                productSorter.sortProducts(currentList, (Product p1, Product p2) -> Double.compare(p2.getRating(), p1.getRating()));
                 System.out.println("Đã sắp xếp danh sách theo Đánh giá giảm dần!");
                 break;
-                
+
             case 3:
-                productSorter.sortProducts(currentList, new service.Comparator<Product>() {
-                    @Override
-                    public int compare(Product p1, Product p2) {
-                        return Integer.compare(p2.getViews(), p1.getViews()); 
-                    }
-                });
+                productSorter.sortProducts(currentList, (Product p1, Product p2) -> Integer.compare(p2.getViews(), p1.getViews()));
                 System.out.println("Đã sắp xếp danh sách theo Lượt xem giảm dần!");
                 break;
-                
+
             default:
                 System.out.println("Lựa chọn không hợp lệ. Vui lòng thử lại!");
-                return;
-    }
-    }
-    private void manageViewedHistory() {
-        System.out.println("--- Viewed Products History ---");
-        ProductsIterator iterator = this.historyManager.iterator();
-        while (iterator.hasNext()) {
-            System.out.println(iterator.next());
+                
         }
+    }
+
+    private void manageViewedHistory() {
+        while (true) {
+        consoleView.displayHistoryMenu();
+
+        int choice = utils.Inputter.getChoice(
+            "  Choice: ", "  Out of range!", "  Invalid!", 1, 5);
+
+        switch (choice) {
+            case 1:
+                if (historyManager.isEmpty()) {
+                    System.out.println("\n  History is empty.");
+                } else {
+                    System.out.println("\n  Recently viewed (most recent first):");
+                    ProductsIterator iterator = historyManager.iterator();
+                    int index = 1;
+                    while (iterator.hasNext()) {
+                        System.out.printf("  #%d. %s%n", index++, iterator.next());
+                    }
+                }
+                break;
+
+
+            case 2:
+                String removeId = utils.Inputter.getString("  Enter Product ID to remove: ");
+                historyManager.removeViewedProduct(removeId);
+                System.out.println("  Removed from history: " + removeId);
+                break;
+
+            case 3:
+                historyManager.clear();
+                System.out.println("  History cleared.");
+                break;
+
+            case 4:
+                return;
+        }
+
+        utils.Inputter.getString("\n  Press Enter to continue...");
+    }
     }
 
     private void saveFile() {
         System.out.println("\n--- Save Data ---");
 
-    boolean success = utils.FileUtils.saveProducts(systemProductList);
+        boolean success = utils.FileUtils.saveProducts(systemProductList);
 
-    if (success) {
-        isSaved = true;
-        System.out.println("Saved " + systemProductList.size() + " products successfully.");
-    } else {
-        System.out.println("Failed to save file. Please try again.");
-    }
+        if (success) {
+            isSaved = true;
+            System.out.println("Saved " + systemProductList.size() + " products successfully.");
+        } else {
+            System.out.println("Failed to save file. Please try again.");
+        }
 
-    utils.Inputter.getString("\nPress Enter to continue...");
+        utils.Inputter.getString("\nPress Enter to continue...");
     }
 
     private void exitProgram() {
         if (!isSaved) {
-        boolean wantSave = utils.Inputter.confirmYesNo(
-            "You have unsaved data. Save before exiting? (y/n): ");
-        if (wantSave) {
-            saveFile();
+            boolean wantSave = utils.Inputter.confirmYesNo(
+                    "You have unsaved data. Save before exiting? (y/n): ");
+            if (wantSave) {
+                saveFile();
+            }
         }
-    }
 
-    System.out.println("Thank you for using the system. Goodbye!");
+        System.out.println("Thank you for using the system. Goodbye!");
+        
     }
 }
