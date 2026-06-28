@@ -21,7 +21,7 @@ public class NodeBst {
     }
 
     
-    public NodeBst(Product productInfo, NodeBst prev, NodeBst next) {
+    public NodeBst(Product productInfo, NodeBst left, NodeBst right) {
         this.productInfo = productInfo;
         this.left= left;
         this.right = right;

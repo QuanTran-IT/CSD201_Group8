@@ -102,4 +102,12 @@ public class SearchEngine {
         searchKeyword(root, keyword, result);
         return result;
     }
+    //add data for engine
+    public void setProductList(java.util.List<Product> all) {
+    if (all == null) return;
+    root = null; // reset cây cũ
+    for (Product p : all) {
+        insert(p);
+    }
+}
 }

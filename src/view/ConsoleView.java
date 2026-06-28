@@ -50,6 +50,7 @@ public class ConsoleView {
         addItem("Search Products  (SearchEngine)");
         addItem("Sort Products by Criteria (ProductSorter)");
         addItem("Manage Viewed History (ViewedProductsHistory)");
+        addItem("Save file");
         addItem("Quit program");
         printHeader("E-commerce Product Catalog Filter");
         showMenu();
@@ -64,7 +65,7 @@ public class ConsoleView {
 
 public void displayProductList(List<Product> products, int pageNumber, int pageSize) {
     System.out.println(border);
-    System.out.printf("  [Page %d]  %d result(s)%n", pageNumber, products.size());
+    System.out.printf("%d result(s)%n",  products.size());
     System.out.println(border);
     if (products.isEmpty()) {
         System.out.println("  (No products on this page)");
@@ -77,12 +78,22 @@ public void displayProductList(List<Product> products, int pageNumber, int pageS
     System.out.println(border);
 }
 public void displayFilterMenu(){
-    
+    menu.clear();
     addItem("  [1] By Price");
     addItem("  [2] By Rating");
     addItem("  [3] By Category");
     addItem("  [4] By Brand");
     printHeader("Filter Products");
+    showMenu();
+    System.out.println(border);
+}
+public void displayHistoryMenu() {
+    menu.clear();
+    addItem("View History");
+    addItem("Remove product from History (by ID)");
+    addItem("Clear all History");
+    addItem("Back to Main Menu");
+    printHeader("Viewed Products History");
     showMenu();
     System.out.println(border);
 }
