@@ -8,7 +8,7 @@ package model;
  *
  * @author ADMIN
  */
-public class Product {
+public class Product implements java.io.Serializable  {
     private String id;
     private String name;
     private String category;

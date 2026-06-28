@@ -12,3 +12,5 @@ target/
 
 # Bỏ qua file log hoặc file dữ liệu tạm (nếu cần)
 *.log
+/dist/
+/build/
