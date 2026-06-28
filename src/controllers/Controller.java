@@ -10,6 +10,7 @@ import service.FilterEngine;
 import service.ProductSorter;
 import service.SearchEngine;
 import service.Comparator;
+import service.ProductsIterator;
 import service.ViewedProductsHistory;
 import view.ConsoleView;
 
@@ -267,6 +268,10 @@ private void filterProduct() {
     }
     private void manageViewedHistory() {
         System.out.println("--- Viewed Products History ---");
+        ProductsIterator iterator = this.historyManager.iterator();
+        while (iterator.hasNext()) {
+            System.out.println(iterator.next());
+        }
     }
 
     private void saveFile() {
