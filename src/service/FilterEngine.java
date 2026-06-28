@@ -6,71 +6,103 @@ import model.Product;
 
 public class FilterEngine {
 
-    // Lưu trữ dữ liệu nội bộ của Engine
+    interface KeyExtractor {
+        String getKey(Product p);
+    }
+
     private List<Product> productList = new ArrayList<>();
 
-    // Hàm nhận dữ liệu từ Controller truyền sang
-    public void setProductList(List<Product> allProducts) {
-        if (allProducts != null) {
-            this.productList = allProducts;
+    private ArrayList<Product> byPrice    = new ArrayList<>();
+    private ArrayList<Product> byRating   = new ArrayList<>();
+    private ArrayList<Product> byCategory = new ArrayList<>();
+    private ArrayList<Product> byBrand    = new ArrayList<>();
+
+
+
+    public void setProductList(List<Product> all) {
+        if (all == null) return;
+        productList = all;
+        byPrice    = sort(all, p -> String.format("%012.2f", p.getPrice()));
+        byRating   = sort(all, p -> String.format("%05.2f",  p.getRating()));
+        byCategory = sort(all, p -> p.getCategory().toLowerCase());
+        byBrand    = sort(all, p -> p.getBrand().toLowerCase());
+    }
+
+    public void addProduct(Product p) {
+        if (p == null) return;
+        productList.add(p);
+        setProductList(productList);
+    }
+
+    public List<Product> getProductList() { return productList; }
+
+   
+
+    private ArrayList<Product> sort(List<Product> all, KeyExtractor key) {
+        ArrayList<Product> list = new ArrayList<>(all);
+        quickSort(list, 0, list.size() - 1, key);
+        return list;
+    }
+
+    private void quickSort(ArrayList<Product> list, int lo, int hi, KeyExtractor key) {
+        if (lo < hi) {
+            int pi = partition(list, lo, hi, key);
+            quickSort(list, lo, pi - 1, key);
+            quickSort(list, pi + 1, hi, key);
         }
     }
 
-    // Thuật toán lọc (đã bỏ tham số List<Product> ở đầu)
-    public List<Product> productFilter(String category, double minPrice,
-            double maxPrice, String brand, double minRating,
-            int pageNumber, int pageSize) {
-
-        if (pageNumber < 1 || pageSize < 1) {
-            throw new IllegalArgumentException("Page number and page size must be greater than 0");
+    private int partition(ArrayList<Product> list, int lo, int hi, KeyExtractor key) {
+        String pivot = key.getKey(list.get(hi));
+        int i = lo - 1;
+        for (int j = lo; j < hi; j++) {
+            if (key.getKey(list.get(j)).compareTo(pivot) <= 0) {
+                i++;
+                Product tmp = list.get(i); list.set(i, list.get(j)); list.set(j, tmp);
+            }
         }
+        Product tmp = list.get(i + 1); list.set(i + 1, list.get(hi)); list.set(hi, tmp);
+        return i + 1;
+    }
 
-        List<Product> result = new ArrayList<>();
-        int offset = (pageNumber - 1) * pageSize;
-        int matchCount = 0;
+  
 
-        for (Product product : this.productList) {
-
-            if (category != null && !product.getCategory().equalsIgnoreCase(category)) {
-                continue;
-            }
-            if (product.getPrice() < minPrice) {
-                continue;
-            }
-            if (product.getPrice() > maxPrice) {
-                continue;
-            }
-            if (brand != null && !product.getBrand().equalsIgnoreCase(brand)) {
-                continue;
-            }
-            if (product.getRating() < minRating) {
-                continue;
-            }
-
-            if (matchCount >= offset) {
-                result.add(product);
-                if (result.size() == pageSize) {
-                    break;
-                }
-            }
-
-            matchCount++;
+    private int binarySearch(ArrayList<Product> list, String target, KeyExtractor key) {
+        int lo = 0, hi = list.size() - 1, result = list.size();
+        while (lo <= hi) {
+            int mid = (lo + hi) / 2;
+            if (key.getKey(list.get(mid)).compareTo(target) >= 0) { result = mid; hi = mid - 1; }
+            else lo = mid + 1;
         }
-
         return result;
     }
 
-    public void addProduct(Product product) {
-        if (product == null) {
-            return;
+ 
+    private List<Product> getRange(ArrayList<Product> list, String min, String max, KeyExtractor key) {
+        List<Product> result = new ArrayList<>();
+        int start = binarySearch(list, min, key);
+        for (int i = start; i < list.size(); i++) {
+            String k = key.getKey(list.get(i));
+            if (k.compareTo(max) > 0) break;
+            result.add(list.get(i));
         }
-        if (this.productList == null) {
-            this.productList = new ArrayList<>();
-        }
-        this.productList.add(product);
+        return result;
     }
 
-    public List<Product> getProductList() {
-        return productList;
+
+
+    public List<Product> filterByDouble(String field, double min, double max) {
+        if (field.equals("price"))
+            return getRange(byPrice,  String.format("%012.2f", min), String.format("%012.2f", max), p -> String.format("%012.2f", p.getPrice()));
+        else
+            return getRange(byRating, String.format("%05.2f",  min), String.format("%05.2f",  max), p -> String.format("%05.2f",  p.getRating()));
+    }
+
+    public List<Product> filterByString(String field, String value) {
+        String target = value.toLowerCase();
+        if (field.equals("category"))
+            return getRange(byCategory, target, target, p -> p.getCategory().toLowerCase());
+        else
+            return getRange(byBrand,    target, target, p -> p.getBrand().toLowerCase());
     }
 }

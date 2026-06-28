@@ -60,11 +60,7 @@ public class ConsoleView {
         return Inputter.getChoice("Enter your choice:", "Just 1-> " + menu.size(), "Invalid!", 1, menu.size());
     }
 
-   public void displayFilterMenu() {
-    printHeader("Filter Products");
-    System.out.println("  Enter criteria below. Press [Enter] to skip any field.");
-    System.out.println(border);
-}
+
 
 public void displayProductList(List<Product> products, int pageNumber, int pageSize) {
     System.out.println(border);
@@ -78,6 +74,16 @@ public void displayProductList(List<Product> products, int pageNumber, int pageS
             System.out.printf("  #%d. %s%n", rowNum, products.get(i));
         }
     }
+    System.out.println(border);
+}
+public void displayFilterMenu(){
+    
+    addItem("  [1] By Price");
+    addItem("  [2] By Rating");
+    addItem("  [3] By Category");
+    addItem("  [4] By Brand");
+    printHeader("Filter Products");
+    showMenu();
     System.out.println(border);
 }
 }

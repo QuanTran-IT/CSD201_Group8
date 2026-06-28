@@ -101,74 +101,43 @@ public class Controller {
         System.out.println("--- Manage Product Information ---");
     }
 
-   private void filterProduct() {
-    // Sync FilterEngine với data mới nhất (đề phòng có thêm/xóa sản phẩm)
+private void filterProduct() {
     filterEngine.setProductList(systemProductList);
-    consoleView.displayFilterMenu();
-
-    // ── Thu thập tiêu chí lọc ──────────────────────────────────────────────
-    String category = utils.Inputter.getStringRegex(
-        "  Category (Laptop/Smartphone/Headphones, Enter=All): ",
-        "  Letters only!", "[A-Za-z]+");
-    if (category.isEmpty()) category = null;
-
-    double minPrice = utils.Inputter.getDoubleAllowEmpty(
-        "  Min price $ (Enter=0): ", 0);
-    double maxPrice = utils.Inputter.getDoubleAllowEmpty(
-        "  Max price $ (Enter=no limit): ", Double.MAX_VALUE);
-
-    String brand = utils.Inputter.getStringRegex(
-        "  Brand (Apple/Samsung/Dell/Sony, Enter=All): ",
-        "  Letters only!", "[A-Za-z]+");
-    if (brand.isEmpty()) brand = null;
-
-    double minRating = utils.Inputter.getDoubleAllowEmpty(
-        "  Min rating 0-5 (Enter=0): ", 0);
-
-    // ── Vòng lặp phân trang ────────────────────────────────────────────────
-    final int PAGE_SIZE = 3;
-    int pageNumber = 1;
-
-    while (true) {
-        java.util.List<model.Product> results = filterEngine.productFilter(
-            category, minPrice, maxPrice, brand, minRating, pageNumber, PAGE_SIZE);
-
-        consoleView.displayProductList(results, pageNumber, PAGE_SIZE);
-
-        // Hết kết quả
-        if (results.isEmpty()) {
-            if (pageNumber == 1) System.out.println("  No products match your criteria.");
-            else { System.out.println("  No more products."); pageNumber--; }
+ 
+   consoleView.displayFilterMenu();
+ 
+    int choice = utils.Inputter.getChoice(
+        "  Choice: ", "  Out of range!", "  Invalid!", 1, 4);
+ 
+    java.util.List<model.Product> result = new java.util.ArrayList<>();
+ 
+    switch (choice) {
+        case 1:
+            double min = utils.Inputter.getDoubleAllowEmpty("  Min price $ (Enter=0): ", 0);
+            double max = utils.Inputter.getDoubleAllowEmpty("  Max price $ (Enter=no limit): ", Double.MAX_VALUE);
+            result = filterEngine.filterByDouble("price", min, max);
             break;
-        }
-
-        boolean isLastPage = (results.size() < PAGE_SIZE);
-
-        // Hiển thị nav phù hợp với trang hiện tại
-        System.out.print("  Options: ");
-        if (!isLastPage)  System.out.print("[N]ext  ");
-        if (pageNumber > 1) System.out.print("[P]rev  ");
-        System.out.println("[Q]uit");
-
-        String nav = utils.Inputter.getString("  Choice: ").toUpperCase();
-
-        switch (nav) {
-            case "N":
-                if (isLastPage) System.out.println("  Already on last page.");
-                else pageNumber++;
-                break;
-            case "P":
-                if (pageNumber > 1) pageNumber--;
-                else System.out.println("  Already on first page.");
-                break;
-            case "Q":
-                System.out.println("  Returning to main menu...");
-                return;
-            default:
-                System.out.println("  Invalid choice.");
-        }
+        case 2:
+            double minRating = utils.Inputter.getDoubleAllowEmpty("  Min rating 0.0-5.0 (Enter=0): ", 0);
+            result = filterEngine.filterByDouble("rating", minRating, 5.0);
+            break;
+        case 3:
+            String category = utils.Inputter.getString("  Category: ");
+            result = filterEngine.filterByString("category", category);
+            break;
+        case 4:
+            String brand = utils.Inputter.getString("  Brand: ");
+            result = filterEngine.filterByString("brand", brand);
+            break;
     }
-
+ 
+    if (result.isEmpty()) {
+        System.out.println("\n  No products found.");
+    } else {
+        consoleView.displayProductList(result, 1, result.size());
+        System.out.printf("  %d result(s) found.%n", result.size());
+    }
+ 
     utils.Inputter.getString("\n  Press Enter to continue...");
 }
 
