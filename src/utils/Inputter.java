@@ -90,7 +90,7 @@ public class Inputter {
                 }
             } catch (NumberFormatException e) {
                 System.out.println("Invalid input! Please enter a valid number.");
-
+    
             }
         } while (true);
     }
