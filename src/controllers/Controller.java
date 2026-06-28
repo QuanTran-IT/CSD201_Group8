@@ -24,7 +24,7 @@ public class Controller {
     private final ViewedProductsHistory historyManager;
     private final ProductSorter productSorter;
     private final ConsoleView consoleView;
-    private final boolean isSaved;
+    private boolean isSaved;
     //data for all system
     private java.util.List<model.Product> systemProductList;
 
@@ -270,10 +270,29 @@ private void filterProduct() {
     }
 
     private void saveFile() {
+        System.out.println("\n--- Save Data ---");
 
+    boolean success = utils.FileUtils.saveProducts(systemProductList);
+
+    if (success) {
+        isSaved = true;
+        System.out.println("Saved " + systemProductList.size() + " products successfully.");
+    } else {
+        System.out.println("Failed to save file. Please try again.");
+    }
+
+    utils.Inputter.getString("\nPress Enter to continue...");
     }
 
     private void exitProgram() {
-        
+        if (!isSaved) {
+        boolean wantSave = utils.Inputter.confirmYesNo(
+            "You have unsaved data. Save before exiting? (y/n): ");
+        if (wantSave) {
+            saveFile();
+        }
+    }
+
+    System.out.println("Thank you for using the system. Goodbye!");
     }
 }
