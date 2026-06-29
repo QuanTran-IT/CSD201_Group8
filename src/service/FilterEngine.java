@@ -46,6 +46,17 @@ public class FilterEngine {
 
     private void quickSort(ArrayList<Product> list, int lo, int hi, KeyExtractor key) {
         if (lo < hi) {
+            if (key.getKey(list.get(lo)).equals(key.getKey(list.get(hi)))) {
+                boolean allSame = true;
+                String firstKey = key.getKey(list.get(lo));
+                for (int i = lo + 1; i <= hi; i++) {
+                    if (!key.getKey(list.get(i)).equals(firstKey)) {
+                        allSame = false;
+                        break;
+                    }
+                }
+                if (allSame) return; // Nếu toàn bộ đoạn đã trùng khóa hoàn toàn thì không cần sort tiếp!
+            }
             int pi = partition(list, lo, hi, key);
             quickSort(list, lo, pi - 1, key);
             quickSort(list, pi + 1, hi, key);

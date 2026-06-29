@@ -41,7 +41,7 @@ public class Controller {
         systemProductList = new java.util.ArrayList<>();
         System.out.println("[System] No data file found. Starting with empty list.");
     }
-
+    java.util.Collections.shuffle(systemProductList);
     // Cả 2 engine nhận chung systemProductList
     searchEngine.setProductList(systemProductList);
     filterEngine.setProductList(systemProductList);
@@ -187,17 +187,8 @@ public class Controller {
         }
     }
 
-    private void sortProductList() {
-        System.out.println("--- Sort Products ---");
-
-        // GỢI Ý LOGIC CODE SẼ NẰM Ở ĐÂY:
-        // 1. Lấy danh sách sản phẩm hiện tại (ví dụ lấy từ filterEngine)
-        // List<Product> currentList = filterEngine.getProductList();
-        // 2. Hỏi user muốn xếp theo giá hay rating...
-        // Comparator<Product> criteria = ... (tạo comparator tương ứng)
-        // 3. Gọi productSorter để xử lý:
-        // productSorter.sortProducts(currentList, criteria);
-        // 4. In danh sách đã sắp xếp ra màn hình
+ private void sortProductList() {
+        System.out.println("\n--- Sort Products ---");
         System.out.println("1. Sort by PRICE (Ascending: Lowest to Highest)");
         System.out.println("2. Sort by RATING (Descending: 5 Stars to 1 Star)");
         System.out.println("3. Sort by POPULARITY (Descending: Most Viewed to Least Viewed)");
@@ -205,37 +196,43 @@ public class Controller {
 
         int sortChoice = consoleView.getChoiceInput();
 
-        // 1. Lấy danh sách sản phẩm hiện tại từ FilterEngine
-        ArrayList<Product> currentList = (ArrayList<Product>) filterEngine.getProductList();
-
-        if (currentList == null || currentList.isEmpty()) {
-            System.out.println("Danh sách sản phẩm đang trống, không thể sắp xếp.");
+        if (systemProductList == null || systemProductList.isEmpty()) {
+            System.out.println("Product list is empty, cannot sort.");
             return;
         }
-
-        // 2. Controller điều phối: Truyền Comparator tự tạo vào cho ProductSorter
+        ArrayList<Product> currentList = new ArrayList<>(systemProductList);
         switch (sortChoice) {
             case 1:
                 productSorter.sortProducts(currentList, (Product p1, Product p2) -> Double.compare(p1.getPrice(), p2.getPrice()));
-                System.out.println("Đã sắp xếp danh sách theo Giá tăng dần!");
+                System.out.println("\nSuccessfully sorted by PRICE (Ascending)!");
                 break;
 
             case 2:
                 productSorter.sortProducts(currentList, (Product p1, Product p2) -> Double.compare(p2.getRating(), p1.getRating()));
-                System.out.println("Đã sắp xếp danh sách theo Đánh giá giảm dần!");
+                System.out.println("\nSuccessfully sorted by RATING (Descending)!");
                 break;
 
             case 3:
                 productSorter.sortProducts(currentList, (Product p1, Product p2) -> Integer.compare(p2.getViews(), p1.getViews()));
-                System.out.println("Đã sắp xếp danh sách theo Lượt xem giảm dần!");
+                System.out.println("\nSuccessfully sorted by POPULARITY (Descending)!");
                 break;
 
             default:
-                System.out.println("Lựa chọn không hợp lệ. Vui lòng thử lại!");
-                
+                System.out.println("Invalid choice. Please try again.");
+                return; 
         }
-    }
 
+        System.out.println("\n--- Preview (Top 10 products) ---");
+             int limit = Math.min(currentList.size(), 10);
+        java.util.List<Product> top10 = currentList.subList(0, limit);
+
+        // Truyền danh sách đã cắt gọn sang cho hàm của bạn cậu hiển thị
+        consoleView.displayProductList(top10, 1, 10);
+        
+        utils.Inputter.getString("\nPress Enter to continue...");
+    }
+ 
+ 
     private void manageViewedHistory() {
         while (true) {
         consoleView.displayHistoryMenu();
