@@ -5,11 +5,11 @@
 package controllers;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import model.Product;
 import service.FilterEngine;
 import service.ProductSorter;
 import service.SearchEngine;
-import service.ProductsIterator;
 import service.ViewedProductsHistory;
 import view.ConsoleView;
 
@@ -269,7 +269,7 @@ public class Controller {
                         System.out.println("\n  History is empty.");
                     } else {
                         System.out.println("\n  Recently viewed (most recent first):");
-                        ProductsIterator iterator = historyManager.iterator();
+                        Iterator<Product> iterator = historyManager.iterator();
                         int index = 1;
                         while (iterator.hasNext()) {
                             System.out.printf("  #%d. %s%n", index++, iterator.next());

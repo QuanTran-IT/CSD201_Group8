@@ -10,6 +10,7 @@ package service;
  */
 
 import java.util.HashMap;
+import java.util.Iterator;
 import model.Product;
 
 public class ViewedProductsHistory {
@@ -21,8 +22,8 @@ public class ViewedProductsHistory {
         this.productMap = new HashMap<>();
     }
 
-    public Iterator iterator() {
-        return new Iterator(this.head);
+    public ProductsIterator iterator() {
+        return new ProductsIterator(this.head);
     }
 
     /**
@@ -120,10 +121,10 @@ public class ViewedProductsHistory {
         }
     }
 
-    private class Iterator implements ProductsIterator {
+    private class ProductsIterator implements Iterator<Product> {
         private Node current;
 
-        Iterator(Node head) {
+        ProductsIterator(Node head) {
             this.current = head;
         }
 
