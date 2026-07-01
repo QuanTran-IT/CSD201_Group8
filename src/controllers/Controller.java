@@ -9,7 +9,6 @@ import model.Product;
 import service.FilterEngine;
 import service.ProductSorter;
 import service.SearchEngine;
-import service.Comparator;
 import service.ProductsIterator;
 import service.ViewedProductsHistory;
 import view.ConsoleView;
@@ -28,25 +27,26 @@ public class Controller {
     private boolean isSaved;
     //data for all system
     private java.util.List<model.Product> systemProductList;
+    private static final int FILTER_PAGE_SIZE = 10;
 
     public Controller() {
-    filterEngine = new FilterEngine();
-    searchEngine = new SearchEngine();
-    historyManager = new ViewedProductsHistory();
-    productSorter = new ProductSorter();
-    consoleView = new ConsoleView();
+        filterEngine = new FilterEngine();
+        searchEngine = new SearchEngine();
+        historyManager = new ViewedProductsHistory();
+        productSorter = new ProductSorter();
+        consoleView = new ConsoleView();
 
-    systemProductList = utils.FileUtils.loadProducts();
-    if (systemProductList == null) {
-        systemProductList = new java.util.ArrayList<>();
-        System.out.println("[System] No data file found. Starting with empty list.");
-    }
-    java.util.Collections.shuffle(systemProductList);
-    // Cả 2 engine nhận chung systemProductList
-    searchEngine.setProductList(systemProductList);
-    filterEngine.setProductList(systemProductList);
-    
-    isSaved = true;
+        systemProductList = utils.FileUtils.loadProducts();
+        if (systemProductList == null) {
+            systemProductList = new java.util.ArrayList<>();
+            System.out.println("[System] No data file found. Starting with empty list.");
+        }
+        java.util.Collections.shuffle(systemProductList);
+        // Cả 2 engine nhận chung systemProductList
+        searchEngine.setProductList(systemProductList);
+        filterEngine.setProductList(systemProductList);
+
+        isSaved = true;
     }
 
     public void startProgram() {
@@ -82,44 +82,68 @@ public class Controller {
     // =================================================================
     // CÁC HÀM XỬ LÝ LOGIC CHI TIẾT
     // =================================================================
-
-
-
     private void filterProduct() {
-//        filterEngine.setProductList(systemProductList);
-
         consoleView.displayFilterMenu();
 
         int choice = utils.Inputter.getChoice(
                 "  Choice: ", "  Out of range!", "  Invalid!", 1, 4);
 
-        java.util.List<model.Product> result = new java.util.ArrayList<>();
+        String field;
+        boolean isDouble;
+        double min = 0, max = 0;
+        String text = null;
 
         switch (choice) {
             case 1:
-                double min = utils.Inputter.getDoubleAllowEmpty("  Min price $ (Enter=0): ", 0);
-                double max = utils.Inputter.getDoubleAllowEmpty("  Max price $ (Enter=no limit): ", Double.MAX_VALUE);
-                result = filterEngine.filterByDouble("price", min, max);
+                field = "price";
+                min = utils.Inputter.getDoubleAllowEmpty("  Min price $ (Enter=0): ", 0);
+                max = utils.Inputter.getDoubleAllowEmpty("  Max price $ (Enter=no limit): ", Double.MAX_VALUE);
+                isDouble = true;
                 break;
             case 2:
-                double minRating = utils.Inputter.getDoubleAllowEmpty("  Min rating 0.0-5.0 (Enter=0): ", 0);
-                result = filterEngine.filterByDouble("rating", minRating, 5.0);
+                field = "rating";
+                min = utils.Inputter.getDoubleAllowEmpty("  Min rating 0.0-5.0 (Enter=0): ", 0);
+                max = 5.0;
+                isDouble = true;
                 break;
             case 3:
-                String category = utils.Inputter.getString("  Category: ");
-                result = filterEngine.filterByString("category", category);
+                field = "category";
+                text = utils.Inputter.getString("  Category: ");
+                isDouble = false;
                 break;
-            case 4:
-                String brand = utils.Inputter.getString("  Brand: ");
-                result = filterEngine.filterByString("brand", brand);
+            default:
+                field = "brand";
+                text = utils.Inputter.getString("  Brand: ");
+                isDouble = false;
                 break;
         }
 
-        if (result.isEmpty()) {
-            System.out.println("\n  No products found.");
-        } else {
-            consoleView.displayProductList(result, 1, result.size());
-            System.out.printf("  %d result(s) found.%n", result.size());
+        int page = 1;
+        while (true) {
+            service.FilterEngine.PageResult<model.Product> r = isDouble
+                    ? filterEngine.filterByDoublePaged(field, min, max, page, FILTER_PAGE_SIZE)
+                    : filterEngine.filterByStringPaged(field, text, page, FILTER_PAGE_SIZE);
+
+            if (r.totalItems == 0) {
+                System.out.println("\n  No products found.");
+                break;
+            }
+
+            consoleView.displayProductList(r.items, page, FILTER_PAGE_SIZE);
+            System.out.printf("  Page %d/%d  -  %d result(s) found.%n", r.page, r.totalPages, r.totalItems);
+
+            if (r.totalPages <= 1) {
+                break;
+            }
+
+            String nav = utils.Inputter.getString("  [n] Next  [p] Previous  Enter to exit: ").trim().toLowerCase();
+            if (nav.equals("n") && page < r.totalPages) {
+                page++;
+            } else if (nav.equals("p") && page > 1) {
+                page--;
+            } else {
+                break;
+            }
         }
 
         utils.Inputter.getString("\n  Press Enter to continue...");
@@ -153,7 +177,7 @@ public class Controller {
                     if (foundProduct != null) {
                         System.out.println("\n[FOUND] Product details:");
                         System.out.println(foundProduct.toString());
-                        historyManager.addViewedProduct(foundProduct); 
+                        historyManager.addViewedProduct(foundProduct);
                     } else {
                         System.out.println("No product found with ID: " + id);
                     }
@@ -187,7 +211,7 @@ public class Controller {
         }
     }
 
- private void sortProductList() {
+    private void sortProductList() {
         System.out.println("\n--- Sort Products ---");
         System.out.println("1. Sort by PRICE (Ascending: Lowest to Highest)");
         System.out.println("2. Sort by RATING (Descending: 5 Stars to 1 Star)");
@@ -219,59 +243,57 @@ public class Controller {
 
             default:
                 System.out.println("Invalid choice. Please try again.");
-                return; 
+                return;
         }
 
         System.out.println("\n--- Preview (Top 10 products) ---");
-             int limit = Math.min(currentList.size(), 10);
+        int limit = Math.min(currentList.size(), 10);
         java.util.List<Product> top10 = currentList.subList(0, limit);
 
         // Truyền danh sách đã cắt gọn sang cho hàm của bạn cậu hiển thị
         consoleView.displayProductList(top10, 1, 10);
-        
+
         utils.Inputter.getString("\nPress Enter to continue...");
     }
- 
- 
+
     private void manageViewedHistory() {
         while (true) {
-        consoleView.displayHistoryMenu();
+            consoleView.displayHistoryMenu();
 
-        int choice = utils.Inputter.getChoice(
-            "  Choice: ", "  Out of range!", "  Invalid!", 1, 5);
+            int choice = utils.Inputter.getChoice(
+                    "  Choice: ", "  Out of range!", "  Invalid!", 1, 5);
 
-        switch (choice) {
-            case 1:
-                if (historyManager.isEmpty()) {
-                    System.out.println("\n  History is empty.");
-                } else {
-                    System.out.println("\n  Recently viewed (most recent first):");
-                    ProductsIterator iterator = historyManager.iterator();
-                    int index = 1;
-                    while (iterator.hasNext()) {
-                        System.out.printf("  #%d. %s%n", index++, iterator.next());
+            switch (choice) {
+                case 1:
+                    if (historyManager.isEmpty()) {
+                        System.out.println("\n  History is empty.");
+                    } else {
+                        System.out.println("\n  Recently viewed (most recent first):");
+                        ProductsIterator iterator = historyManager.iterator();
+                        int index = 1;
+                        while (iterator.hasNext()) {
+                            System.out.printf("  #%d. %s%n", index++, iterator.next());
+                        }
                     }
-                }
-                break;
+                    break;
 
+                case 2:
+                    String removeId = utils.Inputter.getString("  Enter Product ID to remove: ");
+                    historyManager.removeViewedProduct(removeId);
+                    System.out.println("  Removed from history: " + removeId);
+                    break;
 
-            case 2:
-                String removeId = utils.Inputter.getString("  Enter Product ID to remove: ");
-                historyManager.removeViewedProduct(removeId);
-                System.out.println("  Removed from history: " + removeId);
-                break;
+                case 3:
+                    historyManager.clear();
+                    System.out.println("  History cleared.");
+                    break;
 
-            case 3:
-                historyManager.clear();
-                System.out.println("  History cleared.");
-                break;
+                case 4:
+                    return;
+            }
 
-            case 4:
-                return;
+            utils.Inputter.getString("\n  Press Enter to continue...");
         }
-
-        utils.Inputter.getString("\n  Press Enter to continue...");
-    }
     }
 
     private void saveFile() {
@@ -299,6 +321,6 @@ public class Controller {
         }
 
         System.out.println("Thank you for using the system. Goodbye!");
-        
+
     }
 }
