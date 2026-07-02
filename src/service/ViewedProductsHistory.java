@@ -9,8 +9,10 @@ package service;
  * @author ADMIN
  */
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import model.Product;
 
 public class ViewedProductsHistory {
@@ -24,6 +26,35 @@ public class ViewedProductsHistory {
 
     public ProductsIterator iterator() {
         return new ProductsIterator(this.head);
+    }
+
+    /**
+     * Xuất ra danh sách theo đúng thứ tự hiện tại (mới xem nhất -> cũ nhất).
+     * Node là inner class không Serializable nên không thể ghi thẳng object
+     * này xuống file; phải "phẳng hóa" ra List<Product> trước khi lưu.
+     */
+    public List<Product> toOrderedList() {
+        List<Product> result = new ArrayList<>();
+        Iterator<Product> it = iterator();
+        while (it.hasNext()) {
+            result.add(it.next());
+        }
+        return result;
+    }
+
+    /**
+     * Nạp lại history từ 1 danh sách đã lưu (thứ tự: mới xem nhất -> cũ nhất).
+     * Duyệt ngược rồi addViewedProduct từng phần tử để phần tử đầu danh sách
+     * (mới nhất) được add sau cùng, đảm bảo nó nằm ở head sau khi restore.
+     */
+    public void restoreFromList(List<Product> orderedList) {
+        clear();
+        if (orderedList == null) {
+            return;
+        }
+        for (int i = orderedList.size() - 1; i >= 0; i--) {
+            addViewedProduct(orderedList.get(i));
+        }
     }
 
     /**

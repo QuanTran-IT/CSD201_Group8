@@ -103,7 +103,7 @@ public class Controller {
             case 2:
                 field = "rating";
                 min = utils.Inputter.getDoubleAllowEmpty("  Min rating 0.0-5.0 (Enter=0): ", 0);
-                max = 5.0;
+                max = utils.Inputter.getDoubleAllowEmpty("  Max rating min - 5.0 (Enter=0): ", 0);;
                 isDouble = true;
                 break;
             case 3:
@@ -164,60 +164,103 @@ public class Controller {
         while (true) {
             System.out.println("\n----------------- SEARCH ENGINE -----------------");
             System.out.println("1. Search Product by ID");
-            System.out.println("2. Search Product by Keyword (Name, Category, Brand)");
+            System.out.println("2. Search Product by name/keyword");
             System.out.println("3. Back to Main Menu");
             System.out.println("-------------------------------------------------");
 
-            // Sử dụng utils.Inputter để lấy lựa chọn của người dùng
             int choice = utils.Inputter.getIntAllowEmpty("Enter your choice: ", "Invalid choice!", 1);
 
-            // Nếu người dùng nhấn Enter trống (trả về -1 theo hàm getIntAllowEmpty)
             if (choice == -1) {
                 System.out.println("Please enter a choice.");
                 continue;
             }
 
+            if (choice == 3) {
+                System.out.println("Returning to Main Menu...");
+                return; // Thoát hẳn menu Search
+            }
+
+            // Biến dùng chung để chứa dữ liệu tìm được từ cả 2 case
+            java.util.List<model.Product> results = new java.util.ArrayList<>();
+
             switch (choice) {
                 case 1:
                     System.out.println("\n--- Search Product by ID ---");
                     String id = utils.Inputter.getString("Enter Product ID to search: ");
-
-                    // Gọi hàm tìm kiếm đích danh bằng ID trong SearchEngine (Tốc độ O(log n))
                     model.Product foundProduct = searchEngine.searchById(id);
-
+                    
                     if (foundProduct != null) {
-                        System.out.println("\n[FOUND] Product details:");
-                        System.out.println(foundProduct.toString());
-                        historyManager.addViewedProduct(foundProduct);
-                    } else {
-                        System.out.println("No product found with ID: " + id);
+                        results.add(foundProduct); // Cho sản phẩm tìm được vào list
                     }
                     break;
 
                 case 2:
                     System.out.println("\n--- Search Product by Keyword ---");
                     String keyword = utils.Inputter.getString("Enter keyword to search: ");
-
-                    // Gọi hàm tìm kiếm theo từ khóa đa trường (ID, Tên, Category, Brand)
-                    java.util.ArrayList<model.Product> results = searchEngine.searchByKeyword(keyword);
-
-                    if (results.isEmpty()) {
-                        System.out.println("No products found with keyword: " + keyword);
-                    } else {
-                        System.out.println("\n[FOUND] " + results.size() + " product(s):");
-                        for (model.Product p : results) {
-                            System.out.println(p.toString());
-                            historyManager.addViewedProduct(p);
-                        }
-                    }
+                    // Lấy toàn bộ danh sách kết quả
+                    results = searchEngine.searchByKeyword(keyword);
                     break;
-
-                case 3:
-                    System.out.println("Returning to Main Menu...");
-                    return; // Thoát khỏi hàm searchProducts(), quay lại Main Menu của vòng lặp startProgram()
 
                 default:
                     System.out.println("Invalid choice. Please enter 1, 2, or 3.");
+                    continue; // Nếu nhập sai thì quay lại in Menu Search luôn, bỏ qua phân trang
+            }
+
+            // =========================================================
+            // XỬ LÝ PHÂN TRANG NẰM NGOÀI SWITCH (GIỐNG FILTER)
+            // =========================================================
+            
+            if (results.isEmpty()) {
+                System.out.println("\n  No products found.");
+                continue; // Không có kết quả thì quay lại in Menu Search
+            }
+
+            int page = 1;
+            int totalItems = results.size();
+            int totalPages = (int) Math.ceil((double) totalItems / FILTER_PAGE_SIZE);
+
+            while (true) {
+                int start = (page - 1) * FILTER_PAGE_SIZE;
+                int end = Math.min(start + FILTER_PAGE_SIZE, totalItems);
+
+                // Cắt list để lấy data của trang hiện tại
+                java.util.List<model.Product> pageItems = results.subList(start, end);
+
+                // Hiển thị sản phẩm
+                consoleView.displayProductList(pageItems, page, FILTER_PAGE_SIZE);
+                System.out.printf("  Page %d/%d  -  %d result(s) found.%n", page, totalPages, totalItems);
+
+                // Lưu lịch sử xem cho các sản phẩm đang hiển thị
+                for (model.Product p : pageItems) {
+                    historyManager.addViewedProduct(p);
+                }
+
+                if (totalPages <= 1) {
+                    break; // Thoát vòng lặp phân trang, quay lại menu Search
+                }
+
+                // Xử lý nhập liệu điều hướng
+                String nav = utils.Inputter.getStringRegex(
+                        "  [n] Next  [p] Previous  Enter to exit: ",
+                        "  Invalid input! Only 'n', 'p' or Enter is allowed.",
+                        "[npNP]"
+                ).toLowerCase();
+
+                if (nav.isEmpty()) {
+                    break; // Nhấn Enter để thoát phân trang
+                } else if (nav.equals("n")) {
+                    if (page < totalPages) {
+                        page++;
+                    } else {
+                        System.out.println("  Already at the last page.");
+                    }
+                } else { // nav.equals("p")
+                    if (page > 1) {
+                        page--;
+                    } else {
+                        System.out.println("  Already at the first page.");
+                    }
+                }
             }
         }
     }
@@ -307,14 +350,15 @@ public class Controller {
         }
     }
 
-    private void saveFile() {
+   private void saveFile() {
         System.out.println("\n--- Save Data ---");
 
         boolean success = utils.FileUtils.saveProducts(systemProductList);
+        boolean historySuccess = utils.FileUtils.saveViewedHistory(historyManager.toOrderedList());
 
-        if (success) {
+        if (success && historySuccess) {
             isSaved = true;
-            System.out.println("Saved " + systemProductList.size() + " products successfully.");
+            System.out.println("Saved " + systemProductList.size() + " products and viewed history successfully.");
         } else {
             System.out.println("Failed to save file. Please try again.");
         }

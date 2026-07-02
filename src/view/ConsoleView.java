@@ -6,8 +6,11 @@ package view;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.IntFunction;
 import utils.Inputter;
-import model.Product;    
+import model.Product;
+import service.FilterEngine.PageResult;
 
 /**
  *
@@ -98,4 +101,3 @@ public void displayHistoryMenu() {
     System.out.println(border);
 }
 }
-
