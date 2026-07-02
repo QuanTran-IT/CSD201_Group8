@@ -71,6 +71,8 @@ public class SearchEngine {
     }
 
     // Search Product by Keyword (Helper method)
+    // Chỉ match trên ID/Name (định danh) - category/brand là việc của FilterEngine
+    // để tránh 2 tính năng Search vs Filter chồng chéo chức năng nhau.
     private void searchKeyword(NodeBst p, String keyword, ArrayList<Product> result) {
         if (p == null) {
             return;
@@ -83,13 +85,11 @@ public class SearchEngine {
         String lowerKey = keyword.toLowerCase();
         Product info = p.productInfo;
 
-        // Kiểm tra xem keyword có khớp một phần với ID, Tên, Category hoặc Brand không
+        // Kiểm tra xem keyword có khớp một phần với ID hoặc Tên không
         boolean matchName = info.getName().toLowerCase().contains(lowerKey);
         boolean matchId = info.getId().toLowerCase().contains(lowerKey);
-        boolean matchCategory = info.getCategory().toLowerCase().contains(lowerKey);
-        boolean matchBrand = info.getBrand().toLowerCase().contains(lowerKey);
 
-        if (matchName || matchId || matchCategory || matchBrand) {
+        if (matchName || matchId) {
             result.add(info);
         }
 
@@ -102,12 +102,33 @@ public class SearchEngine {
         searchKeyword(root, keyword, result);
         return result;
     }
+
+    // Search Product by Keyword - bản có phân trang, tái dùng PageResult<T> của FilterEngine
+    // để đồng bộ cách phân trang giữa Search và Filter.
+    public service.FilterEngine.PageResult<Product> searchByKeywordPaged(String keyword, int page, int pageSize) {
+        ArrayList<Product> all = searchByKeyword(keyword);
+
+        int total = all.size();
+        if (pageSize <= 0) {
+            return new service.FilterEngine.PageResult<>(new ArrayList<>(), page, pageSize, total);
+        }
+        if (page < 1) {
+            page = 1;
+        }
+        int from = (page - 1) * pageSize;
+        if (from >= total) {
+            return new service.FilterEngine.PageResult<>(new ArrayList<>(), page, pageSize, total);
+        }
+        int to = Math.min(from + pageSize, total);
+        return new service.FilterEngine.PageResult<>(new ArrayList<>(all.subList(from, to)), page, pageSize, total);
+    }
+
     //add data for engine
     public void setProductList(java.util.List<Product> all) {
-    if (all == null) return;
-    root = null; // reset cây cũ
-    for (Product p : all) {
-        insert(p);
+        if (all == null) return;
+        root = null; // reset cây cũ
+        for (Product p : all) {
+            insert(p);
+        }
     }
-}
 }
