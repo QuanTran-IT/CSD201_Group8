@@ -136,17 +136,28 @@ public class Controller {
                 break;
             }
 
-            String nav = utils.Inputter.getString("  [n] Next  [p] Previous  Enter to exit: ").trim().toLowerCase();
-            if (nav.equals("n") && page < r.totalPages) {
-                page++;
-            } else if (nav.equals("p") && page > 1) {
-                page--;
-            } else {
+            String nav = utils.Inputter.getStringRegex(
+                    "  [n] Next  [p] Previous  Enter to exit: ",
+                    "  Invalid input! Only 'n', 'p' or Enter is allowed.",
+                    "[npNP]"
+            ).toLowerCase();
+
+            if (nav.isEmpty()) {
                 break;
+            } else if (nav.equals("n")) {
+                if (page < r.totalPages) {
+                    page++;
+                } else {
+                    System.out.println("  Already at the last page.");
+                }
+            } else { // nav.equals("p")
+                if (page > 1) {
+                    page--;
+                } else {
+                    System.out.println("  Already at the first page.");
+                }
             }
         }
-
-        utils.Inputter.getString("\n  Press Enter to continue...");
     }
 
     private void searchProducts() {
