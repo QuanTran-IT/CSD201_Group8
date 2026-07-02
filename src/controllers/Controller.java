@@ -300,14 +300,49 @@ public class Controller {
                 return;
         }
 
-        System.out.println("\n--- Preview (Top 10 products) ---");
-        int limit = Math.min(currentList.size(), 10);
-        java.util.List<Product> top10 = currentList.subList(0, limit);
+        // [ĐÃ SỬA]: Thay thế "Preview Top 10" bằng vòng lặp Phân trang (Pagination) đồng bộ với hệ thống
+        int page = 1;
+        int totalItems = currentList.size();
+        int totalPages = (int) Math.ceil((double) totalItems / FILTER_PAGE_SIZE);
 
-        // Truyền danh sách đã cắt gọn sang cho hàm của bạn cậu hiển thị
-        consoleView.displayProductList(top10, 1, 10);
+        while (true) {
+            int start = (page - 1) * FILTER_PAGE_SIZE;
+            int end = Math.min(start + FILTER_PAGE_SIZE, totalItems);
 
-        utils.Inputter.getString("\nPress Enter to continue...");
+            // Cắt list để lấy data của trang hiện tại
+            java.util.List<model.Product> pageItems = currentList.subList(start, end);
+
+            // Hiển thị sản phẩm
+            consoleView.displayProductList(pageItems, page, FILTER_PAGE_SIZE);
+            System.out.printf("  Page %d/%d  -  %d result(s) sorted.%n", page, totalPages, totalItems);
+
+            if (totalPages <= 1) {
+                break; // Thoát nếu chỉ có 1 trang
+            }
+
+            // Xử lý nhập liệu điều hướng
+            String nav = utils.Inputter.getStringRegex(
+                    "  [n] Next  [p] Previous  Enter to exit: ",
+                    "  Invalid input! Only 'n', 'p' or Enter is allowed.",
+                    "[npNP]"
+            ).toLowerCase();
+
+            if (nav.isEmpty()) {
+                break; // Nhấn Enter để thoát
+            } else if (nav.equals("n")) {
+                if (page < totalPages) {
+                    page++;
+                } else {
+                    System.out.println("  Already at the last page.");
+                }
+            } else { // nav.equals("p")
+                if (page > 1) {
+                    page--;
+                } else {
+                    System.out.println("  Already at the first page.");
+                }
+            }
+        }
     }
 
     private void manageViewedHistory() {
